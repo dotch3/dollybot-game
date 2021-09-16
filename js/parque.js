@@ -1,5 +1,5 @@
-var dollyApp = {},
-    pq_tam_x = 800,
+var dollyApp = {};
+var pq_tam_x = 1200,
     pq_tam_y = 1200,
     tam_dolly_x = 240,
     tam_dolly_y = 249,
@@ -10,7 +10,8 @@ var dollyApp = {},
     speed = 10,
     textNivel,
     dollybot;
-dollyApp.parque = function() {};
+
+dollyApp.parque = function() { console.log('Parque  Inicial'); };
 dollyApp.parque.prototype = {
     preload: function() {
         game.load.spritesheet('dollybot', '../assets/personagens/spritesheet/dollybotSheet.png', tam_dolly_x, tam_dolly_y);
@@ -21,14 +22,14 @@ dollyApp.parque.prototype = {
         game.physics.startSystem(Phaser.Physics.ARCADE);
         game.stage.backgroundColor = '#999393';
         addChangeStateEventListeners();
-        game.world.setBounds(0, 0, 9500, 1200);
-        game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
-        // game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+        game.world.setBounds(0, 0, 11000, 1100);
+        // game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+        game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
         cursors = game.input.keyboard.createCursorKeys();
 
 
         var fundoParque = game.add.sprite(0, 0, 'parque');
-        fundoParque.scale.setTo(1.2, 2);
+        fundoParque.scale.setTo(1, 1);
 
         console.log(tam_x, tam_y, pq_tam_x, pq_tam_y)
             // Ajustes dos pontos de inicio do dollybot:
@@ -59,8 +60,9 @@ dollyApp.parque.prototype = {
         // game.camera.deadzone = new Phaser.Rectangle(200, 350, 800, 600);
 
         //Textos.
-        var style = { font: "bold 64px Arial", fill: "#ff0044", boundsAlignH: "center", boundsAlignV: "middle" };
-        textNivel = game.add.text(0, tam_dolly_y, "NIVEL1 - ENCONTRO NO PARQUE!!!", style);
+
+        var style = { font: "bold 64px Arial", fill: "#ff0044", boundsAlignH: "center", boundsAlignV: "center" };
+        textNivel = game.add.text(0, 100, "NIVEL1 - ENCONTRO NO PARQUE", style);
 
 
         textNivel.anchor.set(0.5);
@@ -70,12 +72,7 @@ dollyApp.parque.prototype = {
 
         var bar = game.add.graphics();
         bar.beginFill(0x000000, 0.2);
-        bar.drawRect(tam_dolly_x, textNivel.y, textNivel.width, 200);
-
-
-
-
-
+        bar.drawRect(tam_dolly_x, textNivel.y, textNivel.width, 200, style);
     },
     update: function() {
         //Sem cursors:
@@ -83,7 +80,7 @@ dollyApp.parque.prototype = {
         // game.input.keyboard.isDown(Phaser.Keyboard.LEFT)
         // game.input.keyboard.isDown(Phaser.Keyboard.UP)
         // game.input.keyboard.isDown(Phaser.Keyboard.DOWN)
-
+        spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
         if (cursors.right.isDown) {
             dollybot.scale.setTo(1, 1);
@@ -101,17 +98,25 @@ dollyApp.parque.prototype = {
             dollybot.frame = 0;
         }
         if (cursors.up.isDown) {
+            dollybot.animations.play('rodar', 12, true);
             dollybot.y -= speed;
-            if (dollybot.y <= limit_inf_y) {
-                dollybot.y = limit_inf_y;
+            if (dollybot.y <= 580) {
+                dollybot.y = 580;
                 console.log(`Al borde do limite inferior em Y: ${dollybot.x} , ${dollybot.y}`)
             }
+
         } else if (cursors.down.isDown) {
+            dollybot.animations.play('rodar', 12, true);
             dollybot.y += speed;
-            if (dollybot.y >= limit_sup_y) {
+            if (dollybot.y >= 930) {
                 console.log(`Al borde do limite superior em Y:${dollybot.x}, ${dollybot.y}`)
-                dollybot.y = limit_sup_y;
+                dollybot.y = 930;
             }
+
+        }
+
+        if (spaceKey.isDown) {
+            console.log('jump');
         }
     }
 };

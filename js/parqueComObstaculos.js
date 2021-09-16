@@ -1,10 +1,9 @@
-var dollyApp = {},
-    cursors,
+var cursors,
     tam_dolly_x = 240,
     tam_dolly_y = 249,
     speed = 10,
     arbustoLayer,
-    appleLayer, areiaLayer, madeiraLayer, parqueLayer, messageLayer, dollybot;
+    appleLayer, areiaLayer, madeiraLayer, parqueLayer, messageLayer, dollybot, textNivel;
 
 //first stage
 var pq_tam_x = 800,
@@ -39,7 +38,7 @@ dollyApp.parqueComObstaculos.prototype = {
         game.stage.backgroundColor = '#999393';
         addChangeStateEventListeners();
         game.world.setBounds(0, 0, 11000, 1600);
-        game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+        game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
         cursors = game.input.keyboard.createCursorKeys();
 
 
@@ -128,9 +127,16 @@ dollyApp.parqueComObstaculos.prototype = {
         // game.input.keyboard.isDown(Phaser.Keyboard.DOWN)
 
 
+        //Sem cursors:
+        game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)
+        game.input.keyboard.isDown(Phaser.Keyboard.LEFT)
+        game.input.keyboard.isDown(Phaser.Keyboard.UP)
+        game.input.keyboard.isDown(Phaser.Keyboard.DOWN)
         if (cursors.right.isDown) {
             dollybot.scale.setTo(1, 1);
             dollybot.x += speed;
+            dollybot.animations.play('rodar', 12, true);
+            console.log('right');
 
             //Rodando
             dollybot.animations.play('rodar', 12, true);
@@ -139,23 +145,26 @@ dollyApp.parqueComObstaculos.prototype = {
             dollybot.scale.setTo(-1, 1);
             dollybot.x -= speed;
             dollybot.animations.play('rodar', 12, true);
+            console.log('left');
         } else {
             dollybot.animations.stop('rodar');
             dollybot.frame = 0;
         }
         if (cursors.up.isDown) {
             dollybot.y -= speed;
-            dollybot.animations.play('rodar', 12, true);
+            console.log('up');
             if (dollybot.y <= limit_inf_y) {
                 dollybot.y = limit_inf_y;
+                dollybot.animations.play('rodar', 12, true);
                 console.log(`Al borde do limite inferior em Y: ${dollybot.x} , ${dollybot.y}`)
             }
         } else if (cursors.down.isDown) {
+            console.log('down');
             dollybot.y += speed;
-            dollybot.animations.play('rodar', 12, true);
             if (dollybot.y >= limit_sup_y) {
                 console.log(`Al borde do limite superior em Y:${dollybot.x}, ${dollybot.y}`)
                 dollybot.y = limit_sup_y;
+                dollybot.animations.play('rodar', 12, true);
             }
         }
 
@@ -182,19 +191,19 @@ function hitSprite(sprite1, sprite2) {
 }
 
 
-function changeState(i, stateName) {
-    console.log('Fase: ' + stateName);
-    game.state.start(stateName);
-}
+// function changeState(i, stateName) {
+//     console.log('Fase: ' + stateName);
+//     game.state.start(stateName);
+// }
 
-function addKeyCallback(key, fn, args) {
-    game.input.keyboard.addKey(key).onDown.add(fn, null, null, args);
-}
+// function addKeyCallback(key, fn, args) {
+//     game.input.keyboard.addKey(key).onDown.add(fn, null, null, args);
+// }
 
-//Cambia de Fase segundo o numero ingressado. #testes
-function addChangeStateEventListeners() {
-    addKeyCallback(Phaser.Keyboard.ZERO, changeState, 'parque');
-    addKeyCallback(Phaser.Keyboard.ONE, changeState, 'cidade');
-    addKeyCallback(Phaser.Keyboard.TWO, changeState, 'parqueComObstaculos');
+// //Cambia de Fase segundo o numero ingressado. #testes
+// function addChangeStateEventListeners() {
+//     addKeyCallback(Phaser.Keyboard.ZERO, changeState, 'parque');
+//     addKeyCallback(Phaser.Keyboard.ONE, changeState, 'cidade');
+//     addKeyCallback(Phaser.Keyboard.TWO, changeState, 'parqueComObstaculos');
 
-}
+// }
