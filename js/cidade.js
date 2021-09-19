@@ -46,3 +46,11 @@ dollyApp.cidade.prototype = {
 // capanga5.scale.setTo(0.2, 0.25);
 
 // professor.scale.setTo(0.9, 0.9);
+
+//Cambia de Fase segundo o numero ingressado. #testes
+function addChangeStateEventListeners() {
+    addKeyCallback(Phaser.Keyboard.ZERO, changeState, 'parque');
+    addKeyCallback(Phaser.Keyboard.ONE, changeState, 'cidade');
+    addKeyCallback(Phaser.Keyboard.TWO, changeState, 'parqueComObstaculos');
+    addKeyCallback(Phaser.Keyboard.THREE, changeState, 'fabrica');
+}
