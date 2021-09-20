@@ -3,11 +3,11 @@ var plataformas, dollybot, stars, score = 0,
     cursors,
     vel = 300;
 
-dollyApp.fabrica = function() { console.log('Fabrica stage'); };
+dollyApp.fabrica = function() {};
 dollyApp.fabrica.prototype = {
 
     preload: function() {
-        console.log('preload');
+        console.log('Fabrica stage');
         game.load.image('sky', '../assets/sky.png');
         game.load.image('ground', '../assets/fundo.png');
         game.load.image('star', '../assets/star.png');
