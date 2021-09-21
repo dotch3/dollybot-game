@@ -14,18 +14,22 @@ var pq_tam_x = 1200,
     fundoParque,
     score = 0,
     scoreText,
-    capangas;
+    capangas, message,
+    arma,
+    fireButton;
 
 dollyApp.parque = function() {};
 dollyApp.parque.prototype = {
     preload: function() {
         console.log('Parque  Inicial');
-        game.load.spritesheet('dollyboy', '../assets/personagens/spritesheet/dollybotSheet.png', tam_dolly_x, tam_dolly_y);
+        game.load.spritesheet('dollyboy', '../assets/dollybotSheet.png', tam_dolly_x, tam_dolly_y);
         game.load.image('parque', '../assets/parque.png');
         game.load.image('capanga', '../assets/capanga.png');
+        game.load.image('box', 'assets/block.png');
         game.load.image('ground', '../assets/ground.png');
         game.load.image('message', '../assets/message.png');
         game.load.image('escada', '../assets/escada.png');
+        game.load.image('bullet', 'assets/bullet.png');
     },
     create: function() {
         console.log('create Parque');
@@ -78,6 +82,11 @@ dollyApp.parque.prototype = {
         // Animando a imagem com spritesheet
         dollybot.animations.add('rodar', [0, 1, 2, 3, 4]);
 
+        //Animacoes adicionais
+        // dollybot.animations.add('left', [0, 1, 2, 3, ]);
+        // dollybot.animations.add('right', [4, 5, 6, 7, ]);
+
+
 
         game.camera.follow(dollybot);
         game.camera.follow(dollybot, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
@@ -105,18 +114,49 @@ dollyApp.parque.prototype = {
         capangas.enableBody = true;
         var max = game.world.width,
             min = 50;
-        for (var i = 0; i < 12; i++) {
+        for (var i = 0; i < 1; i++) {
             //  Create a star inside of the 'stars' group
             var capanga = capangas.create(Math.floor(Math.random() * (max - min)) + min, 0, 'capanga');
+            capanga.scale.setTo(0.7, 0.7);
 
             //  Let gravity do its thing
             capanga.body.gravity.y = 300;
 
             //  This just gives each star a slightly random bounce value
-            capanga.body.bounce.y = 0.1 + Math.random() * 0.2;
+            capanga.body.bounce.y = 0.1 + Math.random() * 0.5;
+        }
+        console.log('Criados capangas!.');
+
+        //Boxes
+        boxes = game.add.group();
+        boxes.enableBody = true;
+        for (var i = 0; i < 10; i++) {
+            //  Create a star inside of the 'stars' group
+            // var box = boxes.create(Math.floor(Math.random() * (max - min)) + min, 0, 'box');
+            var box = boxes.create(Math.floor(Math.random() * 500) + 200, 0, 'box');
+            game.physics.arcade.enable(box);
+
+            //  Let gravity do its thing
+            box.body.gravity.y = 300;
+            box.body.collideWorldBounds = true;
+            //  This just gives each star a slightly random bounce value
+            box.body.bounce.y = 0.1 + Math.random() * 0.4;
+
         }
 
-        console.log('Criados capangas!.');
+        //Arma
+        arma = game.add.weapon(100, 'bullet');
+        arma.bulletAngleOffSet = -180;
+        arma.bulletSpeed = 500;
+        arma.fireRate = 90;
+        arma.bulletAngleVariance = 10;
+        arma.bulletKillType = Phaser.Weapon.KILL_DISTANCE;
+        arma.bulletKillDistance = 700;
+
+        arma.trackSprite(dollybot, 50, 0, true);
+
+        fireButton = this.input.keyboard.addKey(Phaser.KeyCode.ENTER);
+
         //Message
         messages = game.add.group();
         messages.enableBody = true;
@@ -132,6 +172,7 @@ dollyApp.parque.prototype = {
     update: function() {
         var hittingPiso = game.physics.arcade.collide(dollybot, plataformas);
         var hittingEscada = game.physics.arcade.collide(dollybot, plataformas);
+
         game.physics.arcade.collide(dollybot, plataformas);
         game.physics.arcade.collide(capangas, plataformas);
         game.physics.arcade.collide(capangas, escada);
@@ -140,6 +181,9 @@ dollyApp.parque.prototype = {
         game.physics.arcade.overlap(dollybot, capangas, hitCapanga, null, this);
         game.physics.arcade.overlap(dollybot, messages, hitMessageFinal, null, this);
         game.physics.arcade.collide(dollybot, escada, hitEscada, null, this);
+
+        game.physics.arcade.collide(dollybot, boxes);
+        game.physics.arcade.collide(boxes, plataformas);
 
 
         spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
@@ -171,14 +215,21 @@ dollyApp.parque.prototype = {
 
 
 
-        if (spaceKey.isDown && dollybot.body.touching.down) {
+        if (spaceKey.isDown && dollybot.body.touching.down || spaceKey.isDown && dollybot.y >= game.height - dollybot.body.height) {
             console.log('jump');
             //Change the color and throw bullet
+            dollybot.animations.play('rodar', 12, true);
+            dollybot.body.velocity.y = -380;
+        }
+        if (fireButton.isDown) {
+            console.log('arma disparada');
+            arma.fire();
         }
     },
     render: function() {
         //debug 
         game.debug.spriteInfo(dollybot, 50, 50);
+        arma.debug;
 
     }
 };
@@ -211,21 +262,30 @@ function hitMessageFinal(dollybot, message) {
     fundoParque.tint = 0x80ffbf;
     dollybot.tint = 0xffffff;
     move(dollybot);
-
-    // message.kill();
+    // game.time.events.add(Phaser.Timer.SECOND * 4, fadePicture(message), this);
+    //animacion de final
+    message.destroy();
 
 }
 
 function move(dollybot) {
     console.log('move');
+    dollybot.tint = 0xffffff;
     dollybot.body.move = true;
+    // dollybot.enableUpdate = true
+    // dollybot.animations.play('run', 15, true);
+    // dollybot.animations.play('rodar', 12, true);
+    textNivel.setText("Missão cumprida!")
     dollybot.body.velocity.x = 800;
-    dollybot.animations.play('rodar', 12, true);
-    // dollybot.body.moveTo(2000, 300, Phaser.ANGLE_RIGHT);
-    startTime = game.time.time;
-    duration = 0;
+
 }
 
+function fadePicture(message) {
+
+    game.add.tween(message).to({ alpha: 0 }, 2000, Phaser.Easing.Linear.None, true);
+    // message.destroy()
+
+}
 
 function changeState(i, stateName) {
     console.log('Fase: ' + stateName);
