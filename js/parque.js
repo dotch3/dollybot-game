@@ -22,13 +22,13 @@ dollyApp.parque = function() {};
 dollyApp.parque.prototype = {
     preload: function() {
         console.log('Parque  Inicial');
-        game.load.spritesheet('dollyboy', '../assets/dollybotSheet.png', tam_dolly_x, tam_dolly_y);
-        game.load.image('parque', '../assets/parque.png');
-        game.load.image('capanga', '../assets/capanga.png');
+        game.load.spritesheet('dollyboy', 'assets/dollybotSheet.png', tam_dolly_x, tam_dolly_y);
+        game.load.image('parque', 'assets/parque.png');
+        game.load.image('capanga', 'assets/capanga.png');
         game.load.image('box', 'assets/block.png');
-        game.load.image('ground', '../assets/ground.png');
-        game.load.image('message', '../assets/message.png');
-        game.load.image('escada', '../assets/escada.png');
+        game.load.image('ground', 'assets/ground.png');
+        game.load.image('message', 'assets/message.png');
+        game.load.image('escada', 'assets/escada.png');
         game.load.image('bullet', 'assets/bullet.png');
     },
     create: function() {

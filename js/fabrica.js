@@ -8,10 +8,10 @@ dollyApp.fabrica.prototype = {
 
     preload: function() {
         console.log('Fabrica stage');
-        game.load.image('sky', '../assets/sky.png');
-        game.load.image('ground', '../assets/fundo.png');
-        game.load.image('star', '../assets/star.png');
-        game.load.spritesheet('dollyboy', '../assets/dollyboy.png', 150, 154);
+        game.load.image('sky', 'assets/sky.png');
+        game.load.image('ground', 'assets/fundo.png');
+        game.load.image('star', 'assets/star.png');
+        game.load.spritesheet('dollyboy', 'assets/dollyboy.png', 150, 154);
     },
 
     create: function() {
