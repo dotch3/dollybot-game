@@ -124,6 +124,7 @@ dollyApp.parque.prototype = {
 
             //  This just gives each star a slightly random bounce value
             capanga.body.bounce.y = 0.1 + Math.random() * 0.5;
+
         }
         console.log('Criados capangas!.');
 
@@ -168,10 +169,20 @@ dollyApp.parque.prototype = {
         scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
         scoreText.fixedToCamera = true;
 
+        //bullets
+        bullets = game.add.group();
+        bullets.enableBody = true;
+        bullets.physicsBodyType = Phaser.Physics.ARCADE;
+
     },
     update: function() {
         var hittingPiso = game.physics.arcade.collide(dollybot, plataformas);
         var hittingEscada = game.physics.arcade.collide(dollybot, plataformas);
+        game.physics.arcade.overlap(arma.bullets, capangas, killCapangas, null, this);
+        game.physics.arcade.overlap(arma.bullets, boxes, killCapangas, null, this);
+
+        //hit capangas
+
 
         game.physics.arcade.collide(dollybot, plataformas);
         game.physics.arcade.collide(capangas, plataformas);
@@ -233,6 +244,12 @@ dollyApp.parque.prototype = {
 
     }
 };
+
+function killCapangas(bullet, enemy) {
+
+    enemy.kill();
+    enemy.destroy();
+}
 
 function hitEscada(dollybot, escada) {
     console.log('escada');
