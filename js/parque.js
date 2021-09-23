@@ -49,8 +49,8 @@ dollyApp.parque.prototype = {
         ground.scale.setTo(10, 2);
         ground.body.immovable = true;
 
-        // escada = game.add.sprite(9500, 800, 'escada'); //final
-        escada = game.add.sprite(500, 900, 'escada');
+        escada = game.add.sprite(9850, 800, 'escada'); //final
+        // escada = game.add.sprite(500, 900, 'escada');
         game.physics.enable(escada, Phaser.Physics.ARCADE);
         escada.scale.setTo(0.7, 0.7);
 
@@ -161,7 +161,7 @@ dollyApp.parque.prototype = {
         //Message
         messages = game.add.group();
         messages.enableBody = true;
-        var messageFinal = messages.create(1300, 600, 'message');
+        var messageFinal = messages.create(10000, 600, 'message');
         messageFinal.scale.setTo(0.5, 0.5);
         messageFinal.body.immovable = true;
 
@@ -294,8 +294,16 @@ function move(dollybot) {
     // dollybot.animations.play('rodar', 12, true);
     textNivel.setText("Missão cumprida!")
     dollybot.body.velocity.x = 800;
+    //Sleep a bit and call the next state
+    game.time.events.add(Phaser.Timer.SECOND * 5, nextPhase('fabrica'), this);
+    game.state.start();
 
 }
+
+function nextPhase(stateName) {
+    console.log('nova fase');
+    game.state.start(stateName);
+};
 
 function fadePicture(message) {
 
