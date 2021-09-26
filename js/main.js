@@ -7,7 +7,6 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO);
 
 
 game.state.add('parque', dollyApp.parque);
-game.state.add('desafio', dollyApp.desafio);
 game.state.add('fabrica', dollyApp.fabrica);
-// game.state.add('jogo', dollyApp.jogo);
+game.state.add('jogo', dollyApp.jogo);
 game.state.start('parque');

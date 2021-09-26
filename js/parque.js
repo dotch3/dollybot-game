@@ -10,12 +10,19 @@ var pq_tam_x = 1200,
     fundoParque,
     messageFinal,
     score = 0,
-    scoreText,
+    scoreText, finishText, styleTexts,
     capangas, message,
     arma, armaCapanga,
     fireButton,
     max, min = 400,
-    flagCollision = true;
+    flagCollision = true,
+    lives = 3,
+    livesText, countHits = 0,
+    limitHits = 1,
+    limitCapangas = 20,
+    limitBoxes = 20;
+
+var explode, disparo, killBox, killCapanga;
 
 dollyApp.parque = function() {};
 dollyApp.parque.prototype = {
@@ -30,6 +37,13 @@ dollyApp.parque.prototype = {
         game.load.image('escada', 'assets/escada.png');
         game.load.image('bullet', 'assets/bullet.png');
         game.load.image('bulletCapanga', 'assets/bulletCapanga.png', 150, 150);
+        //Musicas
+        game.load.audio('explode', 'assets/audio/SoundEffects/explode.wav');
+        game.load.audio('explosion', 'assets/audio/SoundEffects/explosion.mp3');
+        game.load.audio('boxKilled', 'assets/audio/SoundEffects/boxKilled.mp3');
+        game.load.audio('capangaKilled', 'assets/audio/SoundEffects/capangaKilled.mp3');
+        game.load.audio('disparo', 'assets/audio/SoundEffects/disparo.mp3');
+
     },
     create: function() {
         console.log('create Parque');
@@ -41,6 +55,23 @@ dollyApp.parque.prototype = {
         fundoParque.scale.setTo(1, 1);
         game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
         // game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+
+        //Musica:
+
+        explode = game.add.audio('explode');
+        disparo = game.add.audio('disparo');
+        boxKilled = game.add.audio('boxKilled');
+        capangaKilled = game.add.audio('capangaKilled');
+
+        // game.sound.setDecodedCallback([explode, disparo, boxKilled, capangaKilled], null, this);
+
+
+        // explode.onStop.add(soundStopped, this);
+        // disparo.onStop.add(soundStopped, this);
+        // boxKilled.onStop.add(soundStopped, this);
+        // capangaKilled.onStop.add(soundStopped, this);
+
+
 
         plataformas = game.add.group();
         plataformas.enableBody = true;
@@ -69,35 +100,23 @@ dollyApp.parque.prototype = {
         escada.enableBody = true;
         escada.body.immovable = true;
 
-
-        cursors = game.input.keyboard.createCursorKeys();
-
         // Ajustes dos pontos de inicio do dollybot:
         dollybot = game.add.sprite(32, game.world.height - 450, 'dollyboy');
         game.physics.enable(dollybot, Phaser.Physics.ARCADE);
-
-
 
         //Centrar a imagen no centro dela mesma
         dollybot.anchor.setTo(0.5, 0.5);
         dollybot.x = tam_dolly_x;
         dollybot.y = game.world.height - tam_dolly_y;
-
         dollybot.scale.setTo(0.5, 0.5);
-        dollybot.body.gravity.y = 450;
-
         dollybot.body.bounce.y = 0.2;
         dollybot.body.gravity.y = 300;
         dollybot.body.collideWorldBounds = true;
-
         // Animando a imagem com spritesheet
         dollybot.animations.add('rodar', [0, 1, 2, 3, 4]);
-
         //Animacoes adicionais
         // dollybot.animations.add('left', [0, 1, 2, 3, ]);
         // dollybot.animations.add('right', [4, 5, 6, 7, ]);
-
-
 
         game.camera.follow(dollybot);
         game.camera.follow(dollybot, Phaser.Camera.FOLLOW_LOCKON, 0.5, 0.5);
@@ -105,7 +124,7 @@ dollyApp.parque.prototype = {
         spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
         //Textos.
 
-        var styleTexts = { font: "bold 32px Arial", fill: "#ff0044", boundsAlignH: "center", boundsAlignV: "middle" };
+        styleTexts = { font: "bold 32px Arial", fill: "#ff0044", boundsAlignH: "center", boundsAlignV: "middle" };
         // var style = { font: "32px Arial", fill: "#ff0044", wordWrap: true, wordWrapWidth: sprite.width, align: "center", backgroundColor: "#ffff00" };
 
         textNivel = game.add.text(game.scale.width / 2, 100, "ENCONTRO NO PARQUE", styleTexts);
@@ -113,39 +132,23 @@ dollyApp.parque.prototype = {
         textNivel.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
         textNivel.fixedToCamera = true;
         textNivel.cameraOffset.setTo(game.scale.width / 2 + 250, 50);
-
-
         // screen size: game.scale.width - game.scale.height.
 
+        let stylesLives = { font: "bold 32px Arial", fill: "#1f4ecf", boundsAlignH: "center", boundsAlignV: "middle" }
+        livesText = game.add.text(80, 100, 'Vidas: ' + lives, stylesLives);
+        livesText.fixedToCamera = true;
+        livesText.anchor.set(0.5);
+        livesText.setShadow(3, 3, '#fafafa', 2);
 
+        finishText = game.add.text(game.scale.width / 2, 100, "JOGO\nFinal Score: " + score + "\nClick para reiniciar", { font: "bold 64px Arial", fill: "#ff0044", boundsAlignH: "center", boundsAlignV: "middle" });
 
-        //Capangas
-        capangas = game.add.group();
-        capangas.enableBody = true;
-        createNewCapanga();
+        finishText.anchor.set(0.5);
+        finishText.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
+        finishText.fixedToCamera = true;
+        finishText.cameraOffset.setTo(game.scale.width / 2, game.scale.height / 2);
+        finishText.visible = false;
 
-        //Boxes
-        boxes = game.add.physicsGroup();
-        boxes.enableBody = true;
-        createBox();
-
-
-
-        //Arma
-        arma = game.add.weapon(100, 'bullet');
-        arma.bulletAngleOffSet = -180;
-        arma.bulletSpeed = 800;
-        arma.fireRate = 150;
-        arma.bulletAngleVariance = 5;
-        arma.bulletKillType = Phaser.Weapon.KILL_DISTANCE;
-        arma.bulletKillDistance = 500;
-
-        arma.trackSprite(dollybot, 50, 0, false);
-        arma.fireAngle = Phaser.ANGLE_RIGHT
-
-        fireButton = this.input.keyboard.addKey(Phaser.KeyCode.ENTER);
-
-
+        createItems();
 
         //Message
         messageFinal = game.add.sprite(10250, 800, 'message');
@@ -155,26 +158,17 @@ dollyApp.parque.prototype = {
         messageFinal.body.immovable = true;
         messageFinal.animations.add('brilhar', [0, 1, 2, 3]);
 
-        //  The score
-        scoreText = game.add.text(16, 16, 'PONTOS: 0', styleTexts);
-        scoreText.fixedToCamera = true;
-
-        //bullets
-        bullets = game.add.group();
-        bullets.enableBody = true;
-        bullets.physicsBodyType = Phaser.Physics.ARCADE;
-
-
+        cursors = game.input.keyboard.createCursorKeys();
     },
     update: function() {
 
         var hittingPlataforma = game.physics.arcade.collide(dollybot, plataformas);
         var hittingEscada = game.physics.arcade.collide(dollybot, escada);
-        game.physics.arcade.collide(dollybot, boxes, collisionBoxes, null, this);
+        game.physics.arcade.collide(dollybot, boxes, collisionBox, null, this);
         // game.physics.arcade.collide(dollybot, boxes, hitBoxes, null, this);
 
         game.physics.arcade.overlap(arma.bullets, capangas, killOjects, null, this);
-        game.physics.arcade.overlap(dollybot, capangas, hitCapanga, null, this);
+        game.physics.arcade.overlap(dollybot, capangas, collisionCapanga, null, this);
         game.physics.arcade.overlap(dollybot, messageFinal, hitMessageFinal, null, this);
         game.physics.arcade.overlap(boxes, arma.bullets, killOjects, null, this);
         game.physics.arcade.overlap(arma.bullets, boxes, killOjects, null, this);
@@ -187,11 +181,13 @@ dollyApp.parque.prototype = {
         game.physics.arcade.collide(boxes, dollybot);
 
         messageFinal.animations.play('brilhar');
+        livesText.text = 'VIDAS: ' + lives;
         // capanga.x = -speed;
         if (cursors.right.isDown) {
             dollybot.scale.setTo(0.5, 0.5);
             dollybot.x += speed;
             arma.fireAngle = Phaser.ANGLE_RIGHT;
+            arma.trackSprite(dollybot, 50, 0, false);
 
             //Rodando
             dollybot.animations.play('rodar', 12, true);
@@ -201,6 +197,7 @@ dollyApp.parque.prototype = {
             dollybot.x -= speed;
             dollybot.animations.play('rodar', 12, true);
             arma.fireAngle = Phaser.ANGLE_LEFT;
+            arma.trackSprite(dollybot, -50, 0, false);
         } else {
             dollybot.animations.stop('rodar');
             dollybot.frame = 0;
@@ -223,15 +220,52 @@ dollyApp.parque.prototype = {
         if (fireButton.isDown) {
             console.log('arma disparada');
             arma.fire();
+            disparo.play();
         }
     },
     render: function() {
         //debug 
-        game.debug.spriteInfo(dollybot, 50, 50);
+        game.debug.spriteInfo(dollybot, game.scale.width - 400, 20);
         arma.debug;
 
     }
 };
+
+function createItems() {
+    console.log('criando items para parque');
+    //Capangas
+    capangas = game.add.group();
+    capangas.enableBody = true;
+    createNewCapanga();
+
+    //Boxes
+    boxes = game.add.physicsGroup();
+    boxes.enableBody = true;
+    createBox();
+
+    //Arma
+    arma = game.add.weapon(100, 'bullet');
+    arma.bulletAngleOffSet = -180;
+    arma.bulletSpeed = 800;
+    arma.fireRate = 150;
+    arma.bulletAngleVariance = 5;
+    arma.bulletKillType = Phaser.Weapon.KILL_DISTANCE;
+    arma.bulletKillDistance = 500;
+    arma.trackSprite(dollybot, 50, 0, false);
+    arma.fireAngle = Phaser.ANGLE_RIGHT
+    fireButton = game.input.keyboard.addKey(Phaser.KeyCode.ENTER);
+
+
+    //  The score
+    scoreText = game.add.text(16, 16, 'PONTOS: 0', styleTexts);
+    scoreText.fixedToCamera = true;
+    scoreText.setShadow(3, 3, '#fafafa', 2)
+
+    //bullets
+    bullets = game.add.group();
+    bullets.enableBody = true;
+    bullets.physicsBodyType = Phaser.Physics.ARCADE;
+}
 
 function onPlataforma(player, plataforma) {
     let oldSpeed = speed;
@@ -256,6 +290,7 @@ function onPlataforma(player, plataforma) {
 function createBox() {
     //  Create a star inside of the 'stars' group
     // var box = boxes.create(Math.floor(Math.random() * (max - min)) + min, 0, 'box');
+    console.log(`Novo box criado, limite:${limitBoxes}`)
     var box = boxes.create(Math.floor(Math.random() * 500) + 200, 0, 'box');
     game.physics.enable(box, Phaser.Physics.ARCADE);
     box.enableBody = true;
@@ -265,22 +300,30 @@ function createBox() {
     box.body.collideWorldBounds = true;
     //  This just gives each star a slightly random bounce value
     box.body.bounce.y = 0.1 + Math.random() * 0.4;
+    if (limitBoxes > 0) {
+        limitBoxes--;
+        queueItems(game.rnd.integerInRange(2, 5), 'createBox', limitBoxes);
+    }
 }
 
 function createNewCapanga() {
 
     // capanga.x = (Math.floor(Math.random() * (max - min)) + min);
-    let rand = (Math.floor(Math.random() * (400 - 150)) + 150);
-    let posX = dollybot.x + rand;
-    capanga = capangas.create(posX, 0, 'capanga');
+    // capanga.x = (Math.floor(Math.random() * (game.scale.width - 400)) + 100);
+    let randX = (Math.floor(Math.random() * (game.scale.width - 400) + 400));
+    let randY = (Math.floor(Math.random() * (game.scale.height) / 2) - 400) + 100;
+    let posX = dollybot.x + randX;
+    let posY = dollybot.y + randY;
+    console.log(`posicao do capanga x:${randX} y:${randY}, posX: ${posX}, posY ${posY} - game(width): ${game.scale.width} dolly.width: ${dollybot.x} game(height): ${game.scale.height}`);
+    capanga = capangas.create(posX, posY, 'capanga');
 
     capanga.body.collideWorldBounds = true;
     capanga.body.blocked, down = true;
     capanga.scale.setTo(0.6, 0.6);
 
-    capanga.body.gravity.y = 300;
+    capanga.body.gravity.y = 700;
     capanga.body.bounce.y = 0.1 + Math.random() * 0.5;
-    capanga.x = -speed;
+    // capanga.x = -speed;
     //Arma capanga
     armaCapanga = game.add.weapon(100, 'bulletCapanga');
     // armaCapanga.bulletAngleOffSet = -180;
@@ -293,37 +336,27 @@ function createNewCapanga() {
     armaCapanga.trackSprite(capanga, -5, 10, false);
     armaCapanga.trackOffset.y = 50
 
-    // timing
-    // queueCapanga(game.rnd.integerInRange(2500, 5000));
+    if (limitCapangas > 0) {
+        queueItems(game.rnd.integerInRange(2, 10), 'createNewCapanga', limitCapangas);
+        limitCapangas--;
+    }
 }
 
-function queueCapanga(tempo) {
-    console.log(`tempo pra prox capanaguita ${tempo}`);
-    // game.time.addOnce(time, createNewCapanga); // add a timer that gets called once, then auto disposes to create a new enemy after the time given
-    // game.time.events.add(Phaser.Timer.SECOND * time, createNewCapanga, this);
-    game.time.events.repeat(Phaser.Timer.SECOND * 2, 10, createNewCapanga, this);
-}
-
-function collisionBoxes(player, box) {
-    console.log('box e player collision');
-    if (!player.hasOverlapped && !box.hasOverlapped) {
-        player.hasOverlapped = box.hasOverlapped = true;
-        console.log('overlapped')
-        game.time.events.add(Phaser.Timer.SECOND * 3, function() {
-            score = score - 10;
-            scoreText.text = 'Score: ' + score;
-        }, this);
-
-    } else {
-        player.tint = 0xf000df;
-        box.tint = 0xff00ff;
-        game.time.events.add(Phaser.Timer.SECOND * 3, function() {
-            box.tint = 0xffffff;
-            player.tint = 0xffffff;
-            box.kill();
-        }, this);
-
-        scoreText.text = 'Score: ' + score;
+function queueItems(tempo, itemFunction, limitItem) {
+    console.log(`tempo pra prox item ${tempo}  - parque`);
+    switch (String(itemFunction)) {
+        case "createBox":
+            game.time.events.add(Phaser.Timer.SECOND * tempo, function() {
+                createBox();
+            }, this);
+            console.log(`Limit Boxes - ${limitItem}`);
+            break;
+        case "createNewCapanga":
+            game.time.events.add(Phaser.Timer.SECOND * tempo, function() {
+                createNewCapanga();
+            }, this);
+            console.log(`Limit Capangas - ${limitItem}`);
+            break;
     }
 }
 
@@ -331,6 +364,8 @@ function hitBoxes(bullet, box) {
     console.log('hitBoxes');
     box.tint = 0xff00ff;
     bullet.tint = 0xff00ff;
+    //Musica
+    boxkilled.play();
     game.time.events.add(Phaser.Timer.SECOND * 2, function() {
         console.log('testing');
         box.destroy();
@@ -348,13 +383,15 @@ function killOjects(bullet, objeto) {
         console.log('testing');
         objeto.destroy();
     }, this);
+    boxKilled.play();
     objeto.kill();
     objeto.destroy();
     //Bullets
     bullet.kill();
+    // bullet.destroy();
     score += 10;
     console.log(`Score : ${score}`)
-    scoreText.text = 'Score: ' + score;
+    scoreText.text = 'PONTOS: ' + score;
 }
 
 function hitEscada(dollybot, escada) {
@@ -362,18 +399,80 @@ function hitEscada(dollybot, escada) {
     dollybot.tint = 0x80ffbf;
 }
 
-function hitCapanga(dollybot, capanga) {
-    // dollybot e capanga mudam de cor
-    console.log('capanga atingido');
-    capanga.tint = 0xff00ff;
-    dollybot.tint = 0xff00ff;
-    timer = game.time.now;
-    game.time.events.add(Phaser.Timer.SECOND * 2, function() {
-        capanga.tint = 0xffffff;
-    }, this);
+function collisionBox(player, box) {
+    console.log('box e player collision');
+    if (!player.hasOverlapped && !box.hasOverlapped) {
+        player.hasOverlapped = box.hasOverlapped = true;
+        console.log('overlapped')
+        game.time.events.add(Phaser.Timer.SECOND * 3, function() {
+            score = score - 10;
+            scoreText.text = 'Score: ' + score;
+            countHits++;
+            if (countHits >= limitHits) {
+                lives--;
+            }
+        }, this);
 
+    } else {
+        player.tint = 0xf000df;
+        box.tint = 0xff00ff;
+        game.time.events.add(Phaser.Timer.SECOND * 3, function() {
+            box.tint = 0xffffff;
+            player.tint = 0xffffff;
+            box.kill();
+            countHits++;
+        }, this);
+
+        scoreText.text = 'Score: ' + score;
+    }
 }
 
+function collisionCapanga(dollybot, capanga) {
+    // dollybot e capanga mudam de cor
+    console.log(`vidas restantes:  ${lives}`);
+    if (!dollybot.hasOverlapped && !capanga.hasOverlapped) {
+        dollybot.hasOverlapped = capanga.hasOverlapped = true;
+        console.log('atropelhando ao capanga');
+        capanga.tint = 0xff00ff;
+        dollybot.tint = 0xff00ff;
+        timer = game.time.now;
+        game.time.events.add(Phaser.Timer.SECOND * 2, function() {
+            capanga.tint = 0xffffff;
+            if (lives <= 0) {
+                console.log("R.I.P dollybot");
+
+                dollybot.kill();
+                capangas.callAll('kill');
+                boxes.callAll('kill');
+
+                finishText.text = " GAME OVER \n Click to restart";
+                finishText.visible = true;
+
+                // "click to restart" handler
+                game.input.onTap.addOnce(restart, this);
+
+            } else {
+                countHits++;
+                if (countHits >= limitHits) {
+                    lives--;
+                }
+            }
+
+        }, this);
+    } else {
+        dollybot.tint = 0xf000df;
+        capanga.tint = 0xff00ff;
+        game.time.events.add(Phaser.Timer.SECOND * 3, function() {
+            dollybot.tint = 0xffffff;
+            capanga.tint = 0xffffff;
+
+            capanga.kill();
+        }, this);
+    }
+
+    livesText.text = 'VIDAS: ' + lives;
+
+}
 
 
 function hitMessageFinal(dollybot, message) {
@@ -414,6 +513,20 @@ function fadePicture(message) {
 
 }
 
+function restart() {
+
+    lives = 3;
+    boxes.removeAll();
+    capangas.removeAll();
+    createItems();
+
+    //revives the player
+    dollybot.revive();
+    //hides the text
+    finishText.visible = false;
+
+}
+
 function changeState(i, stateName) {
     console.log('Fase: ' + stateName);
     game.state.start(stateName);
@@ -425,12 +538,8 @@ function addKeyCallback(key, fn, args) {
 
 //Cambia de Fase segundo o numero ingressado. #testes
 function addChangeStateEventListeners() {
-    addKeyCallback(Phaser.Keyboard.ZERO, changeState, 'parque');
-    addKeyCallback(Phaser.Keyboard.ONE, changeState, 'cidade');
-    addKeyCallback(Phaser.Keyboard.TWO, changeState, 'parqueComObstaculos');
-    addKeyCallback(Phaser.Keyboard.THREE, changeState, 'fabrica');
+    addKeyCallback(Phaser.Keyboard.ONE, changeState, 'parque');
+    addKeyCallback(Phaser.Keyboard.TWO, changeState, 'fabrica');
     addKeyCallback(Phaser.Keyboard.THREE, changeState, 'jogo');
 
 }
-
-//Extension do phaser

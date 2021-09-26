@@ -1,7 +1,13 @@
-var plataformas, dollybot, stars, score = 0,
-    scoreText,
+var plataformas,
+    dollybot,
+    stars,
+    score = 0,
     cursors,
-    vel = 300;
+    vel = 300,
+    style, jump,
+    arma,
+    currentNivel = 2,
+    lives = 1;
 
 dollyApp.fabrica = function() {};
 dollyApp.fabrica.prototype = {
@@ -10,116 +16,131 @@ dollyApp.fabrica.prototype = {
         console.log('Fabrica stage');
         game.load.image('sky', 'assets/sky.png');
         game.load.image('ground', 'assets/fundo.png');
-        game.load.image('star', 'assets/star.png');
-        game.load.spritesheet('dollyboy', 'assets/dollyboy.png', 150, 154);
+        game.load.image('apple', 'assets/apple.png');
+        game.load.image('box', 'assets/block.png');
+        game.load.spritesheet('dollyboy', 'assets/dollybotSheet.png', 240, 249);
+        game.load.image('bullet', 'assets/bullet.png');
     },
 
     create: function() {
         console.log('create');
         game.physics.startSystem(Phaser.Physics.ARCADE);
-        game.world.setBounds(0, 0, 2400, 900);
+        game.world.setBounds(0, 0, 1200, 900);
         game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
         addChangeStateEventListeners();
         game.add.sprite(0, 0, 'sky');
         plataformas = game.add.group();
         plataformas.enableBody = true;
         console.log(`çriando o ground: ${game.world.height}`);
-        var ground = plataformas.create(0, game.world.height - 64, 'ground');
-        ground.scale.setTo(4, 2);
+        var ground = plataformas.create(0, game.world.height - 100, 'ground');
+        ground.scale.setTo(1, 1);
         ground.body.immovable = true;
+        var plataforma = plataformas.create(450, 650, 'ground');
+        plataforma.body.immovable = true;
+        plataforma.scale.setTo(1, 0.5);
 
-        //  Now let's create two ledges
-        var ledge = plataformas.create(950, 1350, 'ground');
+        plataforma = plataformas.create(-250, 450, 'ground');
+        plataforma.body.immovable = true;
+        plataforma.scale.setTo(1, 0.5);
 
-        ledge.body.immovable = true;
+        plataforma = plataformas.create(350, 250, 'ground');
+        plataforma.body.immovable = true;
+        plataforma.scale.setTo(1, 0.5);
 
-        ledge = plataformas.create(-50, 900, 'ground');
 
-        ledge.body.immovable = true;
-
-        ledge = plataformas.create(650, 400, 'ground');
-
-        ledge.body.immovable = true;
-
-        // The dollybot and its settings
+        // Ajustes dos pontos de inicio do dollybot:
         dollybot = game.add.sprite(32, game.world.height - 450, 'dollyboy');
-        game.physics.arcade.enable(dollybot);
-
+        game.physics.enable(dollybot, Phaser.Physics.ARCADE);
+        dollybot.anchor.setTo(0.5, 0.5);
+        dollybot.scale.setTo(0.5, 0.5);
         //  dollybot physics properties. Give the little guy a slight bounce.
         dollybot.body.bounce.y = 0.2;
         dollybot.body.gravity.y = 300;
         dollybot.body.collideWorldBounds = true;
 
         //  Our two animations, walking left and right.
-        dollybot.animations.add('left', [0, 1, 2, 3], 10, true);
-        dollybot.animations.add('right', [5, 6, 7, 8], 10, true);
+        dollybot.animations.add('left', [0, 1, 2, 3, 4], 10, true);
+        dollybot.animations.add('right', [4, 5, 6, 7], 10, true);
 
         //Camera
         game.camera.follow(dollybot);
         game.camera.follow(dollybot, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
 
-        //  Finally some stars to collect
-        stars = game.add.group();
 
-        //  We will enable physics for any star that is created in this group
-        stars.enableBody = true;
+        apples = game.add.group();
+        apples.enableBody = true;
 
 
         //  Here we'll create 12 of them evenly spaced apart
         for (var i = 0; i < 12; i++) {
             //  Create a star inside of the 'stars' group
-            var star = stars.create(i * 70, 0, 'star');
+            var apple = apples.create(i * 70, 0, 'apple');
 
             //  Let gravity do its thing
-            star.body.gravity.y = 300;
+            apple.body.gravity.y = 300;
 
-            //  This just gives each star a slightly random bounce value
-            star.body.bounce.y = 0.7 + Math.random() * 0.2;
+            //  This just gives each apple a slightly random bounce value
+            apple.body.bounce.y = 0.7 + Math.random() * 0.2;
         }
-
-        //  The score
-        scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '64px', fill: '#000' });
-
-        //  Our controls.
-        cursors = game.input.keyboard.createCursorKeys();
-
-
-
+        createItems();
         //Textos.
-        var style = { font: "bold 64px Arial", fill: "#ff0044", boundsAlignH: "center", boundsAlignV: "middle" };
-        textNivel = game.add.text(game.world.width / 2, 0, "NIVEL1", style);
+        style = { font: "bold 28px Arial", fill: "#1f4ecf", boundsAlignH: "center", boundsAlignV: "middle" };
+        textNivel = game.add.text(game.world.width / 2, 10, "RESGATA AOS AMIGUINHOS ", style);
         textNivel.anchor.set(0.1);
-        textNivel.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
+        textNivel.setShadow(3, 3, '#fafafa', 2);
         textNivel.fixedToCamera = true;
 
-        var bar = game.add.graphics();
-        bar.beginFill(0x000000, 0.2);
-        bar.drawRect(tam_dolly_x, textNivel.y, 400, 200);
-        bar.anchor.set(0.9);
+        let stylesLives = { font: "bold 32px Arial", fill: "#1f4ecf", boundsAlignH: "center", boundsAlignV: "middle" }
+        livesText = game.add.text(80, 100, 'Vidas: ' + lives, stylesLives);
+        livesText.fixedToCamera = true;
+        livesText.anchor.set(0.5);
+        livesText.setShadow(3, 3, '#fafafa', 2);
 
+        cursors = game.input.keyboard.createCursorKeys();
+        jump = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+
+        if (limitCapangas < 10 && limitBoxes < 10) {
+
+            textNivel.text = "NIVEL " + currentNivel;
+
+        }
 
 
     },
 
     update: function() {
         // console.log('update');
-        var hitPlatform = game.physics.arcade.collide(dollybot, plataformas);
-        game.physics.arcade.collide(stars, plataformas)
-        game.physics.arcade.overlap(dollybot, stars, collectStar, null, this);
+        var hittingPlataforma = game.physics.arcade.collide(dollybot, plataformas);
+        game.physics.arcade.collide(apples, plataformas)
+        game.physics.arcade.collide(capangas, plataformas);
+        game.physics.arcade.collide(boxes, plataformas);
+        game.physics.arcade.collide(dollybot, boxes, collisionBox, null, this);
+        game.physics.arcade.collide(dollybot, capangas, collisionCapanga, null, this);
 
+        game.physics.arcade.overlap(dollybot, apples, collectApples, null, this);
+        game.physics.arcade.overlap(arma.bullets, boxes, killOjects, null, this);
+        game.physics.arcade.overlap(arma.bullets, capangas, killOjects, null, this);
+        game.physics.arcade.collide(boxes, dollybot);
         //  Reset the dollybots velocity (movement)
         dollybot.body.velocity.x = 0;
 
         if (cursors.left.isDown) {
             //  Move to the left
+            dollybot.scale.setTo(-0.5, 0.5);
             dollybot.body.velocity.x = -vel;
+            dollybot.animations.play('left', 12, true);
+            arma.fireAngle = Phaser.ANGLE_LEFT;
+            arma.trackSprite(dollybot, -50, 0, false);
+
 
             dollybot.animations.play('left');
         } else if (cursors.right.isDown) {
             //  Move to the right
             dollybot.body.velocity.x = vel;
-
+            dollybot.scale.setTo(0.5, 0.5);
             dollybot.animations.play('right');
+            arma.fireAngle = Phaser.ANGLE_RIGHT;
+            arma.trackSprite(dollybot, -50, 0, false);
         } else {
             //  Stand still
             dollybot.animations.stop();
@@ -128,25 +149,35 @@ dollyApp.fabrica.prototype = {
         }
 
         //  Allow the dollybot to jump if they are touching the ground.
-        if (cursors.up.isDown && dollybot.body.touching.down && hitPlatform) {
+        if (cursors.up.isDown && dollybot.body.touching.down && hittingPlataforma) {
             dollybot.body.velocity.y = -450;
         }
-
+        if (jump.isDown && dollybot.body.blocked.down || jump.isDown && hittingPlataforma) {
+            console.log('jump');
+            //Change the color and throw bullet
+            dollybot.animations.play('rodar', 12, true);
+            dollybot.body.velocity.y = -350;
+        }
+        if (fireButton.isDown) {
+            console.log('arma disparada');
+            arma.fire();
+        }
 
 
     },
     render: function() {
         //debug 
-        game.debug.spriteInfo(dollybot, tam_dolly_x, textNivel.y * 2);
+        //game.debug.spriteInfo(dollybot, tam_dolly_x, textNivel.y * 2);
 
     }
 
-}
+};
 
-function collectStar(dollybot, star) {
-
-    // Removes the star from the screen
-    star.kill();
+function collectApples(dollybot, apple) {
+    // Removes the apple from the screen
+    score = score + 10;
+    scoreText.text = 'PONTOS: ' + score;
+    apple.kill();
 
 }
 
@@ -161,9 +192,8 @@ function addKeyCallback(key, fn, args) {
 
 //Cambia de Fase segundo o numero ingressado. #testes
 function addChangeStateEventListeners() {
-    addKeyCallback(Phaser.Keyboard.ZERO, changeState, 'parque');
-    addKeyCallback(Phaser.Keyboard.ONE, changeState, 'cidade');
-    addKeyCallback(Phaser.Keyboard.TWO, changeState, 'parqueComObstaculos');
-    addKeyCallback(Phaser.Keyboard.THREE, changeState, 'fabrica');
+    addKeyCallback(Phaser.Keyboard.ONE, changeState, 'parque');
+    addKeyCallback(Phaser.Keyboard.TWO, changeState, 'fabrica');
+    addKeyCallback(Phaser.Keyboard.THREE, changeState, 'jogo');
 
 }
