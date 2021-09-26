@@ -16,13 +16,13 @@ var pq_tam_x = 1200,
     fireButton,
     max, min = 400,
     flagCollision = true,
-    lives = 3,
+    lives = 1,
     livesText, countHits = 0,
     limitHits = 1,
     limitCapangas = 20,
     limitBoxes = 20;
 
-var explode, disparo, killBox, killCapanga;
+var explode, disparo, killBox, killCapanga, fundoMusical;
 
 dollyApp.parque = function() {};
 dollyApp.parque.prototype = {
@@ -39,10 +39,14 @@ dollyApp.parque.prototype = {
         game.load.image('bulletCapanga', 'assets/bulletCapanga.png', 150, 150);
         //Musicas
         game.load.audio('explode', 'assets/audio/SoundEffects/explode.wav');
+        game.load.audio('boxKilled', 'assets/audio/SoundEffects/boxKilled.wav');
+        game.load.audio('capangaKilled', 'assets/audio/SoundEffects/capangaKilled.wav');
+        game.load.audio('disparo', 'assets/audio/SoundEffects/disparo.wav');
         game.load.audio('explosion', 'assets/audio/SoundEffects/explosion.mp3');
-        game.load.audio('boxKilled', 'assets/audio/SoundEffects/boxKilled.mp3');
-        game.load.audio('capangaKilled', 'assets/audio/SoundEffects/capangaKilled.mp3');
-        game.load.audio('disparo', 'assets/audio/SoundEffects/disparo.mp3');
+        game.load.audio('fundoMusical', 'assets/audio/SoundEffects/dollybot.mp3');
+        game.load.audio('battle', 'assets/audio/SoundEffects/battle.mp3');
+        game.load.audio('pusher', 'assets/audio/SoundEffects/pusher.wav');
+
 
     },
     create: function() {
@@ -57,19 +61,15 @@ dollyApp.parque.prototype = {
         // game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 
         //Musica:
-
         explode = game.add.audio('explode');
         disparo = game.add.audio('disparo');
         boxKilled = game.add.audio('boxKilled');
         capangaKilled = game.add.audio('capangaKilled');
-
-        // game.sound.setDecodedCallback([explode, disparo, boxKilled, capangaKilled], null, this);
-
-
-        // explode.onStop.add(soundStopped, this);
-        // disparo.onStop.add(soundStopped, this);
-        // boxKilled.onStop.add(soundStopped, this);
-        // capangaKilled.onStop.add(soundStopped, this);
+        fundoMusical = game.add.audio('fundoMusical');
+        battle = game.add.audio('battle');
+        pusher = game.add.audio('pusher');
+        sounds = [explode, disparo, boxKilled, capangaKilled, fundoMusical, battle, pusher];
+        game.sound.setDecodedCallback(sounds, start, this);
 
 
 
@@ -231,6 +231,11 @@ dollyApp.parque.prototype = {
     }
 };
 
+function start() {
+    console.log("Musica");
+    fundoMusical.play();
+}
+
 function createItems() {
     console.log('criando items para parque');
     //Capangas
@@ -275,6 +280,7 @@ function onPlataforma(player, plataforma) {
         console.log('overlapped')
         speed = speed + 5;
         player.y -= 80;
+        fundoMusical.play();
         game.time.events.add(Phaser.Timer.SECOND * 1, function() {
             speed = oldSpeed;
         }, this);
@@ -288,15 +294,17 @@ function onPlataforma(player, plataforma) {
 }
 
 function createBox() {
-    //  Create a star inside of the 'stars' group
-    // var box = boxes.create(Math.floor(Math.random() * (max - min)) + min, 0, 'box');
-    console.log(`Novo box criado, limite:${limitBoxes}`)
-    var box = boxes.create(Math.floor(Math.random() * 500) + 200, 0, 'box');
+    let randX = (Math.floor(Math.random() * (game.scale.width - 400) + 400));
+    let randY = (Math.floor(Math.random() * (game.scale.height) / 2) - dollybot.body.height) + 100;
+    let posX = dollybot.x + randX;
+    let posY = randY;
+    console.log(`Novo box criado ${posX}: ${posY}, limite:${limitBoxes}`)
+    var box = boxes.create(posX, posY, 'box');
     game.physics.enable(box, Phaser.Physics.ARCADE);
     box.enableBody = true;
 
     //  Let gravity do its thing
-    box.body.gravity.y = 300;
+    box.body.gravity.y = 500;
     box.body.collideWorldBounds = true;
     //  This just gives each star a slightly random bounce value
     box.body.bounce.y = 0.1 + Math.random() * 0.4;
@@ -401,6 +409,7 @@ function hitEscada(dollybot, escada) {
 
 function collisionBox(player, box) {
     console.log('box e player collision');
+
     if (!player.hasOverlapped && !box.hasOverlapped) {
         player.hasOverlapped = box.hasOverlapped = true;
         console.log('overlapped')
@@ -408,6 +417,7 @@ function collisionBox(player, box) {
             score = score - 10;
             scoreText.text = 'Score: ' + score;
             countHits++;
+            explode.play();
             if (countHits >= limitHits) {
                 lives--;
             }
@@ -438,12 +448,14 @@ function collisionCapanga(dollybot, capanga) {
         timer = game.time.now;
         game.time.events.add(Phaser.Timer.SECOND * 2, function() {
             capanga.tint = 0xffffff;
+
             if (lives <= 0) {
                 console.log("R.I.P dollybot");
 
                 dollybot.kill();
                 capangas.callAll('kill');
                 boxes.callAll('kill');
+                battle.play();
 
                 finishText.text = " GAME OVER \n Click to restart";
                 finishText.visible = true;
@@ -540,6 +552,6 @@ function addKeyCallback(key, fn, args) {
 function addChangeStateEventListeners() {
     addKeyCallback(Phaser.Keyboard.ONE, changeState, 'parque');
     addKeyCallback(Phaser.Keyboard.TWO, changeState, 'fabrica');
-    addKeyCallback(Phaser.Keyboard.THREE, changeState, 'jogo');
+    addKeyCallback(Phaser.Keyboard.THREE, changeState, 'arcade');
 
 }

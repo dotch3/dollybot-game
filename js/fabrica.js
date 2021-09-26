@@ -7,46 +7,63 @@ var plataformas,
     style, jump,
     arma,
     currentNivel = 2,
-    lives = 1;
+    lives = 1,
+    finishText,
+    fundoFactory,
+    amigosCapturados;
 
 dollyApp.fabrica = function() {};
 dollyApp.fabrica.prototype = {
 
     preload: function() {
         console.log('Fabrica stage');
-        game.load.image('sky', 'assets/sky.png');
+        game.load.image('fundoFactory', 'assets/factory.png');
         game.load.image('ground', 'assets/fundo.png');
         game.load.image('apple', 'assets/apple.png');
         game.load.image('box', 'assets/block.png');
         game.load.spritesheet('dollyboy', 'assets/dollybotSheet.png', 240, 249);
         game.load.image('bullet', 'assets/bullet.png');
+        game.load.image('personagens', 'assets/dollyAmigos.png')
     },
 
     create: function() {
         console.log('create');
         game.physics.startSystem(Phaser.Physics.ARCADE);
-        game.world.setBounds(0, 0, 1200, 900);
+        game.world.setBounds(0, 0, 1200, 1200);
         game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
         addChangeStateEventListeners();
-        game.add.sprite(0, 0, 'sky');
+        fundoFactory = game.add.sprite(0, 0, 'fundoFactory');
+        fundoFactory.scale.setTo(1, 1);
         plataformas = game.add.group();
         plataformas.enableBody = true;
         console.log(`çriando o ground: ${game.world.height}`);
-        var ground = plataformas.create(0, game.world.height - 100, 'ground');
+        var ground = plataformas.create(0, game.world.height - 50, 'ground');
         ground.scale.setTo(1, 1);
         ground.body.immovable = true;
-        var plataforma = plataformas.create(450, 650, 'ground');
+        var plataforma = plataformas.create(450, 950, 'ground');
         plataforma.body.immovable = true;
         plataforma.scale.setTo(1, 0.5);
+
+        plataforma = plataformas.create(750, 750, 'ground');
+        plataforma.body.immovable = true;
+        plataforma.scale.setTo(1, 0.5);
+
+        plataforma = plataformas.create(950, 600, 'ground');
+        plataforma.body.immovable = true;
+        plataforma.scale.setTo(1, 0.5);
+
 
         plataforma = plataformas.create(-250, 450, 'ground');
         plataforma.body.immovable = true;
         plataforma.scale.setTo(1, 0.5);
 
-        plataforma = plataformas.create(350, 250, 'ground');
+        plataforma = plataformas.create(950, 250, 'ground');
         plataforma.body.immovable = true;
         plataforma.scale.setTo(1, 0.5);
 
+        plataforma = plataformas.create(-20, 210, 'ground');
+        plataforma.body.immovable = true;
+        plataforma.scale.setTo(0.7, 0.2);
 
         // Ajustes dos pontos de inicio do dollybot:
         dollybot = game.add.sprite(32, game.world.height - 450, 'dollyboy');
@@ -82,6 +99,14 @@ dollyApp.fabrica.prototype = {
             //  This just gives each apple a slightly random bounce value
             apple.body.bounce.y = 0.7 + Math.random() * 0.2;
         }
+
+        finishText = game.add.text(game.scale.width / 2, 100, "JOGO\nFinal Score: " + score + "\nClick para reiniciar", { font: "bold 64px Arial", fill: "#fafafa", boundsAlignH: "center", boundsAlignV: "middle" });
+
+        finishText.anchor.set(0.5);
+        finishText.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
+        finishText.fixedToCamera = true;
+        finishText.cameraOffset.setTo(game.scale.width / 2, game.scale.height / 2);
+        finishText.visible = false;
         createItems();
         //Textos.
         style = { font: "bold 28px Arial", fill: "#1f4ecf", boundsAlignH: "center", boundsAlignV: "middle" };
@@ -105,6 +130,11 @@ dollyApp.fabrica.prototype = {
 
         }
 
+        personagens = game.add.sprite(100, 150, 'personagens');
+        game.physics.arcade.enable(personagens);
+        personagens.anchor.setTo(0.5, 0.5);
+        personagens.scale.setTo(0.7, 0.7);
+        personagens.body.immovable = true;
 
     },
 
@@ -116,14 +146,17 @@ dollyApp.fabrica.prototype = {
         game.physics.arcade.collide(boxes, plataformas);
         game.physics.arcade.collide(dollybot, boxes, collisionBox, null, this);
         game.physics.arcade.collide(dollybot, capangas, collisionCapanga, null, this);
+        game.physics.arcade.collide(dollybot, hitPersonagens, collisionCapanga, null, this);
 
         game.physics.arcade.overlap(dollybot, apples, collectApples, null, this);
         game.physics.arcade.overlap(arma.bullets, boxes, killOjects, null, this);
         game.physics.arcade.overlap(arma.bullets, capangas, killOjects, null, this);
         game.physics.arcade.collide(boxes, dollybot);
+        game.physics.arcade.overlap(dollybot, personagens, hitPersonagens, null, this);
+
         //  Reset the dollybots velocity (movement)
         dollybot.body.velocity.x = 0;
-
+        livesText.text = 'VIDAS: ' + lives;
         if (cursors.left.isDown) {
             //  Move to the left
             dollybot.scale.setTo(-0.5, 0.5);
@@ -173,6 +206,18 @@ dollyApp.fabrica.prototype = {
 
 };
 
+function hitPersonagens(dollybot, personagens) {
+    console.log('Personagens Final');
+    fundoFactory.tint = 0x80ffbf;
+    dollybot.tint = 0xffffff;
+    // move(dollybot);
+    finishText.text = " YOU WON!!";
+    finishText.visible = true;
+    // game.time.events.add(Phaser.Timer.SECOND * 4, fadePicture(personagens), this);
+    //animacion de final
+
+}
+
 function collectApples(dollybot, apple) {
     // Removes the apple from the screen
     score = score + 10;
@@ -194,6 +239,6 @@ function addKeyCallback(key, fn, args) {
 function addChangeStateEventListeners() {
     addKeyCallback(Phaser.Keyboard.ONE, changeState, 'parque');
     addKeyCallback(Phaser.Keyboard.TWO, changeState, 'fabrica');
-    addKeyCallback(Phaser.Keyboard.THREE, changeState, 'jogo');
+    addKeyCallback(Phaser.Keyboard.THREE, changeState, 'arcade');
 
 }
